@@ -11,15 +11,15 @@
     <div class="content">
         <table id="tbCustomer" class="table table-hover">
             <thead>
-            <tr>
-                <th>#</th>
-                <th>Full name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Address</th>
-                <th>Balance</th>
-                <th colspan="3">Action</th>
-            </tr>
+                <tr>
+                    <th>#</th>
+                    <th>Full name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Balance</th>
+                    <th colspan="5">Action</th>
+                </tr>
             </thead>
             <tbody>
             </tbody>
@@ -39,6 +39,9 @@
 
 <!-- Modal Withdraw -->
 <th:block th:replace="/customer/modalWithdraw" />
+
+<!-- Modal Transfer -->
+<th:block th:replace="/customer/modalTransfer" />
 
 
 <th:block th:replace="/layout/script" />
@@ -65,7 +68,7 @@
                         </button>
                     </td>
                     <td>
-                        <button class="btn btn-outline-warning deposit" data-id="${obj.id}"
+                        <button class="btn btn-outline-success deposit" data-id="${obj.id}"
                             data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Deposit">
                             <i class="fas fa-plus"></i>
                         </button>
@@ -74,6 +77,12 @@
                         <button class="btn btn-outline-warning withdraw" data-id="${obj.id}"
                             data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Withdraw">
                             <i class="fas fa-minus"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-outline-primary transfer" data-id="${obj.id}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Transfer">
+                            <i class="fas fa-exchange-alt"></i>
                         </button>
                     </td>
                     <td>
@@ -172,6 +181,30 @@
             })
     }
 
+    function getAllRecipientsWithoutSender(senderId) {
+        $.ajax({
+            headers: {
+                accept: "application/json",
+                "content-type": "application/json"
+            },
+            type: "GET",
+            url: "http://localhost:8089/api/customers/get-all-recipients-without-sender/" + senderId
+        })
+            .done((data) => {
+
+                $("#recipientIdTrf").empty();
+
+                $.each(data, (i, item) => {
+                    let str = `
+                        <option value="${item.id}">(${item.id}) - ${item.fullName}</option>
+                    `;
+                    $("#recipientIdTrf").append(str);
+                });
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+            })
+    }
 
     let btnCreate = $("#btnCreate");
     btnCreate.on("click", () => {
@@ -281,53 +314,19 @@
         }
     })
 
-    function reduceBalance(customerId) {
-        return $.ajax({
-            headers: {
-                accept: "application/json",
-                "content-type": "application/json"
-            },
-            type: "PATCH",
-            url: "http://localhost:8089/api/customers/" + customerId,
-            data: JSON.stringify(customer)
-        })
-            .done((data) => {
-                customer = data;
-            })
-            .fail((jqXHR) => {
-                console.log(jqXHR);
-            })
-    }
+    let btnTransfer = $("#btnTransfer");
+    btnTransfer.on("click", () => {
 
-    function insWithdraw() {
-        $.ajax({
-            headers: {
-                accept: "application/json",
-                "content-type": "application/json"
-            },
-            type: "POST",
-            url: "http://localhost:8089/api/withdraws",
-            data: JSON.stringify(withdraw)
-        })
-            .done(() => {
-                let str = renderCustomer(customer);
+    });
 
-                let updateRow = $("#tr_" + customer.id);
-                updateRow.replaceWith(str);
+    $("#transferAmountTrf").on("input", function () {
+        let transferAmount = +$(this).val();
+        let fees = 10;
+        let feesAmount = transferAmount * fees / 100;
+        let transactionAmount = transferAmount + feesAmount;
 
-                enableTootip();
-
-                removeHandleShowModal();
-
-                handleShowGroupModal();
-
-                $("#modalWithdraw").modal("hide");
-            })
-            .fail((jqXHR) => {
-                console.log(jqXHR);
-            })
-    }
-
+        $("#transactionAmountTrf").val(transactionAmount);
+    })
 
     function handleShowUpdateModal() {
         $(".edit").on("click", function() {
@@ -377,6 +376,26 @@
                 $("#balanceWd").val(customer.balance);
 
                 $("#modalWithdraw").modal("show");
+            }).catch(() => {
+                alert("Error");
+            });
+        })
+    }
+
+    function handleShowTransferModal() {
+        $(".transfer").on("click", function() {
+
+            let customerId = $(this).data("id");
+
+            getCustomerById(customerId).then(() => {
+                $("#senderIdTrf").val(customerId);
+                $("#senderNameTrf").val(customer.fullName);
+                $("#emailTrf").val(customer.email);
+                $("#balanceTrf").val(customer.balance);
+
+                getAllRecipientsWithoutSender(customerId);
+
+                $("#modalTransfer").modal("show");
             }).catch(() => {
                 alert("Error");
             });
@@ -447,12 +466,16 @@
 
         handleShowWithdrawModal();
 
+        handleShowTransferModal();
+
         handleShowConfirmDelete();
     }
 
     function removeHandleShowModal() {
         $(".edit").off("click");
+        $(".deposit").off("click");
         $(".withdraw").off("click");
+        $(".transfer").off("click");
         $(".delete").off("click");
     }
 

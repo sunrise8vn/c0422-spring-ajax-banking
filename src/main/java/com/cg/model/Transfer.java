@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Entity
 @Table(name = "transfers")
+@Accessors(chain = true)
 public class Transfer extends BaseEntity {
 
     @Id
@@ -32,7 +33,7 @@ public class Transfer extends BaseEntity {
     private BigDecimal transferAmount;
 
     @Column(nullable= false)
-    private int fees;
+    private Long fees;
 
     @Column(name = "fees_amount", precision = 12, nullable= false)
     private BigDecimal feesAmount;
@@ -41,7 +42,7 @@ public class Transfer extends BaseEntity {
     private BigDecimal transactionAmount;
 
 
-    public Transfer(Customer sender, Customer recipient, BigDecimal transferAmount, int fees, BigDecimal transactionAmount) {
+    public Transfer(Customer sender, Customer recipient, BigDecimal transferAmount, Long fees, BigDecimal transactionAmount) {
         this.sender = sender;
         this.recipient = recipient;
         this.transferAmount = transferAmount;
